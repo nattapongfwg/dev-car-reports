@@ -1,0 +1,36 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Generate report";
+}
+
+<h1>Car Reports</h1>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-error" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (string.IsNullOrEmpty(Model.UploadToken))
+{
+    <p class="lead">Upload <code>Report.xls</code> (or <code>.xlsx</code>). Then choose which report to generate.</p>
+    <form method="post" enctype="multipart/form-data" class="upload-form" asp-page-handler="Upload">
+        <label for="upload" class="file-label">Choose .xlsx or .xls file</label>
+        <input type="file" id="upload" name="upload" accept=".xlsx,.xls" required />
+        <button type="submit">Upload</button>
+    </form>
+}
+else
+{
+    <p class="lead">
+        File uploaded: <strong>@Model.UploadedFileName</strong>. Pick a report to generate.
+    </p>
+    <form method="post" class="upload-form">
+        <input type="hidden" name="token" value="@Model.UploadToken" />
+        <div class="button-row">
+            <button type="submit" asp-page-handler="Stamp">Stamp Usage Summary</button>
+            <button type="submit" asp-page-handler="Salary">Employee Salary</button>
+            <button type="submit" asp-page-handler="Discard" formnovalidate class="secondary">Discard &amp; Re-upload</button>
+        </div>
+    </form>
+}

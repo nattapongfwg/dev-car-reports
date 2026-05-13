@@ -1,0 +1,30 @@
+bin/
+obj/
+out/
+publish/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Local secrets — never commit
+src/**/appsettings.Production.json
+src/**/appsettings.*.local.json
+
+# Local Claude permissions
+.claude/settings.local.json
+
+# Sample data — only ship the SQL schema, never workbooks (may contain PII)
+samples/*.xlsx
+samples/*.xls
+samples/~$*
+samples/Report_files/
+
+# Logs
+logs/
+*.log
+
+# OS
+Thumbs.db
+.DS_Store

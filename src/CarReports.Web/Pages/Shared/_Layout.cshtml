@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Car Reports</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a class="brand" asp-page="/Index">Car Reports</a>
+        </div>
+    </header>
+    <main class="container">
+        @RenderBody()
+    </main>
+    <footer>
+        <div class="container">
+            <small>&copy; @DateTime.UtcNow.Year Car Reports</small>
+        </div>
+    </footer>
+</body>
+</html>
