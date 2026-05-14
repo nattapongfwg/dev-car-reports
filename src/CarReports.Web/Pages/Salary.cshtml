@@ -1,0 +1,43 @@
+@page
+@model SalaryModel
+@{
+    ViewData["Title"] = "Employee Salary";
+}
+
+<p><a asp-page="/Index" class="back-link">&larr; Back</a></p>
+<h1>Employee Salary</h1>
+<p class="lead">Upload both files, then click <strong>Export to Excel</strong>.</p>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-error" role="alert">@Model.ErrorMessage</div>
+}
+
+<form method="post" enctype="multipart/form-data" class="upload-form" asp-page-handler="Export" id="salary-form">
+    <div class="upload-field">
+        <label for="vehicleReport" class="file-label">1. Vehicle Report (Report.xls / .xlsx)</label>
+        <input type="file" id="vehicleReport" name="vehicleReport" accept=".xlsx,.xls" required />
+    </div>
+    <div class="upload-field">
+        <label for="phoneReport" class="file-label">2. Phone Report (report_phone.xlsx)</label>
+        <input type="file" id="phoneReport" name="phoneReport" accept=".xlsx" required />
+    </div>
+    <button type="submit" id="export-button" disabled>Export to Excel</button>
+</form>
+
+<script>
+    (function () {
+        var vehicleInput = document.getElementById('vehicleReport');
+        var phoneInput = document.getElementById('phoneReport');
+        var exportButton = document.getElementById('export-button');
+
+        function refresh() {
+            var ready = vehicleInput.files.length > 0 && phoneInput.files.length > 0;
+            exportButton.disabled = !ready;
+        }
+
+        vehicleInput.addEventListener('change', refresh);
+        phoneInput.addEventListener('change', refresh);
+        refresh();
+    })();
+</script>

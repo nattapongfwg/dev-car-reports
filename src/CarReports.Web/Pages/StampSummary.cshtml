@@ -1,0 +1,22 @@
+@page
+@model StampSummaryModel
+@{
+    ViewData["Title"] = "Stamp Usage Summary";
+}
+
+<p><a asp-page="/Index" class="back-link">&larr; Back</a></p>
+<h1>Stamp Usage Summary</h1>
+<p class="lead">Upload a parking-stamp report (<code>.xlsx</code> or <code>.xls</code>) to get a grouped summary by remark.</p>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-error" role="alert">@Model.ErrorMessage</div>
+}
+
+<form method="post" enctype="multipart/form-data" class="upload-form">
+    <div class="upload-field">
+        <label for="upload" class="file-label">Choose .xlsx or .xls file</label>
+        <input type="file" id="upload" name="upload" accept=".xlsx,.xls" required />
+    </div>
+    <button type="submit">Generate</button>
+</form>

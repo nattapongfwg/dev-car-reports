@@ -11,5 +11,6 @@ public sealed record EmployeeVehicleMapping(
     string SectionName,
     string? CostCenter,
     string? Email,
-    string VehicleType,
+    string? BusinessPhone,
+    string? VehicleType,
     string? PayrollCode);

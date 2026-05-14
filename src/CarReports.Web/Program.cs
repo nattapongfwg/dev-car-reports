@@ -54,6 +54,7 @@ try
     builder.Services.AddScoped<ICarRepository, CarRepository>();
     builder.Services.AddScoped<IUploadedExcelReader, UploadedExcelReader>();
     builder.Services.AddScoped<IStampDetailReader, StampDetailReader>();
+    builder.Services.AddScoped<IPhoneBillReader, PhoneBillReader>();
     builder.Services.AddScoped<IReportWorkbookBuilder, ReportWorkbookBuilder>();
     builder.Services.AddScoped<ISalaryWorkbookBuilder, SalaryWorkbookBuilder>();
     builder.Services.AddScoped<ISalaryRepository, SalaryRepository>();

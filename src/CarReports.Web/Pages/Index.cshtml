@@ -1,36 +1,38 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Generate report";
+    ViewData["Title"] = "Home";
 }
 
 <h1>Car Reports</h1>
+<p class="lead">Pick a report to generate.</p>
 
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div class="alert alert-error" role="alert">@Model.ErrorMessage</div>
-}
+<div class="nav-card-row">
+    <a class="nav-card" asp-page="/Salary">
+        <span class="nav-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
+                <path fill="#107C41" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path fill="#185C37" d="M14 2v6h6z"/>
+                <text x="12" y="17" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="7" font-weight="700" fill="#FFFFFF">XLS</text>
+            </svg>
+        </span>
+        <span class="nav-card-body">
+            <span class="nav-card-title">Employee Salary</span>
+            <span class="nav-card-sub">Monthly salary deduction report from vehicle stamps + phone bill.</span>
+        </span>
+    </a>
 
-@if (string.IsNullOrEmpty(Model.UploadToken))
-{
-    <p class="lead">Upload <code>Report.xls</code> (or <code>.xlsx</code>). Then choose which report to generate.</p>
-    <form method="post" enctype="multipart/form-data" class="upload-form" asp-page-handler="Upload">
-        <label for="upload" class="file-label">Choose .xlsx or .xls file</label>
-        <input type="file" id="upload" name="upload" accept=".xlsx,.xls" required />
-        <button type="submit">Upload</button>
-    </form>
-}
-else
-{
-    <p class="lead">
-        File uploaded: <strong>@Model.UploadedFileName</strong>. Pick a report to generate.
-    </p>
-    <form method="post" class="upload-form">
-        <input type="hidden" name="token" value="@Model.UploadToken" />
-        <div class="button-row">
-            <button type="submit" asp-page-handler="Stamp">Stamp Usage Summary</button>
-            <button type="submit" asp-page-handler="Salary">Employee Salary</button>
-            <button type="submit" asp-page-handler="Discard" formnovalidate class="secondary">Discard &amp; Re-upload</button>
-        </div>
-    </form>
-}
+    <a class="nav-card" asp-page="/Accounting">
+        <span class="nav-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
+                <path fill="#107C41" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path fill="#185C37" d="M14 2v6h6z"/>
+                <text x="12" y="17" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="7" font-weight="700" fill="#FFFFFF">XLS</text>
+            </svg>
+        </span>
+        <span class="nav-card-body">
+            <span class="nav-card-title">Accounting</span>
+            <span class="nav-card-sub">Coming soon.</span>
+        </span>
+    </a>
+</div>

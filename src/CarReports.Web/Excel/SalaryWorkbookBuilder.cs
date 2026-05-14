@@ -201,7 +201,9 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         sheet.Cell(r, ColCostCenter).Value  = row.CostCenter ?? string.Empty;
         sheet.Cell(r, ColVehicleType).Value = MapVehicleType(row.VehicleType);
 
-        // I, J, K left blank; L = J + K formula.
+        // I left blank; J/K filled from phone bill (zero if not present); L = J + K formula.
+        sheet.Cell(r, ColPhoneExceed).Value  = row.PhoneExcess;
+        sheet.Cell(r, ColPhoneService).Value = row.PhoneService;
         var colJ = XLHelper.GetColumnLetterFromNumber(ColPhoneExceed);
         var colK = XLHelper.GetColumnLetterFromNumber(ColPhoneService);
         sheet.Cell(r, ColPhoneTotal).FormulaA1 = $"={colJ}{r}+{colK}{r}";
@@ -253,10 +255,11 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         }
     }
 
-    private static string MapVehicleType(string code) => code switch
+    private static string MapVehicleType(string? code) => code switch
     {
         "C" => "Car",
         "M" => "Motorcycle",
+        null => string.Empty,
         _   => code
     };
 
