@@ -138,6 +138,96 @@ button:disabled {
 
 button:disabled:hover { background: #c4cad3; }
 
+.page-head { margin-bottom: 1rem; }
+
+.table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0 0.75rem 0;
+}
+
+.table-toolbar input[type="search"] {
+    flex: 0 0 320px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: #fff;
+}
+
+.table-toolbar input[type="search"]:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(31, 78, 120, 0.12);
+}
+
+.filter-count {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+}
+
+.table-scroll {
+    overflow: auto;
+    max-height: 70vh;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.owner-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    font-size: 0.88rem;
+}
+
+.owner-table thead th {
+    background: #f0f3f7;
+    color: var(--color-fg);
+    font-weight: 600;
+    text-align: center;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.owner-table thead .group-row th { top: 0; }
+.owner-table thead .slot-row th {
+    top: 2.55rem;
+    font-weight: 500;
+    background: #f7f9fc;
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+.owner-table thead .group {
+    background: #e4ebf3;
+    color: var(--color-accent);
+    letter-spacing: 0.02em;
+}
+
+.owner-table tbody td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid #eef0f4;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.owner-table tbody tr:hover td { background: #f9fafc; }
+
+.owner-table .col-code { text-align: left; font-family: "Segoe UI Mono", Consolas, monospace; font-weight: 600; color: var(--color-accent); }
+.owner-table .col-name { text-align: left; min-width: 220px; }
+.owner-table .col-count { font-weight: 600; }
+
+.owner-table th.group-end, .owner-table td.group-end {
+    border-right: 2px solid var(--color-border);
+}
+
+.owner-table .empty { color: #c4cad3; }
+
 input[type="file"] {
     padding: 0.5rem;
     border: 1px dashed var(--color-border);

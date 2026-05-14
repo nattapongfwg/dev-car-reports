@@ -58,6 +58,7 @@ try
     builder.Services.AddScoped<IReportWorkbookBuilder, ReportWorkbookBuilder>();
     builder.Services.AddScoped<ISalaryWorkbookBuilder, SalaryWorkbookBuilder>();
     builder.Services.AddScoped<ISalaryRepository, SalaryRepository>();
+    builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
     builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
     builder.Services.AddScoped<ISalaryReportService, SalaryReportService>();
 
