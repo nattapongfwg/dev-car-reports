@@ -31,3 +31,20 @@ jobs:
 
       - name: Publish self-contained (win-x64, single-file)
         run: dotnet publish src/CarReports.Web/CarReports.Web.csproj -c Release --no-build -o publish
+
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Restore
+        run: dotnet restore tests/CarReports.Web.Tests/CarReports.Web.Tests.csproj
+
+      - name: Test
+        run: dotnet test tests/CarReports.Web.Tests/CarReports.Web.Tests.csproj --no-restore --logger "console;verbosity=normal"
