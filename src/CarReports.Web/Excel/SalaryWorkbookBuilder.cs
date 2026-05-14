@@ -10,6 +10,49 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
     private const int GroupHeaderRow = 3;
     private const int SubHeaderRow = 4;
     private const int FirstDataRow = 5;
+    private const int LastCol = 27;
+
+    // Column positions (1-based)
+    private const int ColId           = 1;   // A
+    private const int ColName         = 2;   // B
+    private const int ColSalaryCode   = 3;   // C
+    private const int ColCompany     = 4;   // D
+    private const int ColDepartment   = 5;   // E
+    private const int ColSection     = 6;   // F
+    private const int ColCostCenter   = 7;   // G
+    private const int ColVehicleType  = 8;   // H  (NEW — Vehicle Type)
+
+    // I-L : ค่าโทรศัพท์ส่วนเกิน
+    private const int ColPhoneRemark  = 9;   // I
+    private const int ColPhoneExceed  = 10;  // J
+    private const int ColPhoneService = 11;  // K
+    private const int ColPhoneTotal   = 12;  // L  (formula =J+K)
+
+    private const int ColMonthlyPark  = 13;  // M
+
+    // N-P : ค่าจอดรถรายชั่วโมง
+    private const int ColLumpini      = 14;  // N  (hourly total)
+    private const int ColTrueDigital  = 15;  // O
+    private const int ColHourlyTotal  = 16;  // P  (formula =N+O)
+
+    // Q-R : ค่าจอดรถส่วนที่บริษัทช่วยเหลือ
+    private const int ColMinus400     = 17;  // Q  (formula =N-400)
+    private const int ColRemaining    = 18;  // R  (formula =IF(Q<0,0,Q))
+
+    // S-U : ยอดหักเงินเดือน {month}
+    private const int ColPhoneDeduct  = 19;  // S  (formula =L)
+    private const int ColParkDeduct   = 20;  // T  (formula =R)
+    private const int ColTotalDeduct  = 21;  // U  (formula =S+T)
+
+    private const int ColNote         = 22;  // V
+    private const int ColEmail        = 23;  // W
+
+    // X-Z : สรุปเฉพาะที่ต้องทำบันทึกหัก
+    private const int ColSummaryPhone = 24;  // X  (formula =S)
+    private const int ColSummaryPark  = 25;  // Y  (formula =T)
+    private const int ColSummaryTotal = 26;  // Z  (formula =U)
+
+    private const int ColPayroll      = 27;  // AA
 
     private static readonly XLColor GroupHeaderFill = XLColor.FromHtml("#D9E1F2");
     private static readonly XLColor SubHeaderFill = XLColor.FromHtml("#FFF2CC");
@@ -56,32 +99,31 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
 
     private static void WriteGroupHeaders(IXLWorksheet sheet, string periodText)
     {
-        SetMerged(sheet, GroupHeaderRow, 1, GroupHeaderRow, 1, "ID");
-        SetMerged(sheet, GroupHeaderRow, 2, GroupHeaderRow, 2, "ชื่อ - นามสกุล");
-        SetMerged(sheet, GroupHeaderRow, 3, GroupHeaderRow, 3, "Salary Code");
-        SetMerged(sheet, GroupHeaderRow, 4, GroupHeaderRow, 4, "Company");
-        SetMerged(sheet, GroupHeaderRow, 5, GroupHeaderRow, 5, "Department");
-        SetMerged(sheet, GroupHeaderRow, 6, GroupHeaderRow, 6, "Section");
-        SetMerged(sheet, GroupHeaderRow, 7, GroupHeaderRow, 7, "Cost Center");
+        // Single-column headers (will be merged vertically with row 4).
+        sheet.Cell(GroupHeaderRow, ColId).Value           = "ID";
+        sheet.Cell(GroupHeaderRow, ColName).Value         = "ชื่อ - นามสกุล";
+        sheet.Cell(GroupHeaderRow, ColSalaryCode).Value   = "Salary Code";
+        sheet.Cell(GroupHeaderRow, ColCompany).Value      = "Company";
+        sheet.Cell(GroupHeaderRow, ColDepartment).Value   = "Department";
+        sheet.Cell(GroupHeaderRow, ColSection).Value      = "Section";
+        sheet.Cell(GroupHeaderRow, ColCostCenter).Value   = "Cost Center";
+        sheet.Cell(GroupHeaderRow, ColVehicleType).Value  = "Vehicle Type";
 
-        SetMerged(sheet, GroupHeaderRow, 8, GroupHeaderRow, 11, "ค่าโทรศัพท์ส่วนเกิน");
+        // Merged group headers spanning multiple columns.
+        SetMerged(sheet, GroupHeaderRow, ColPhoneRemark,  GroupHeaderRow, ColPhoneTotal,    "ค่าโทรศัพท์ส่วนเกิน");
+        sheet.Cell(GroupHeaderRow, ColMonthlyPark).Value = "ค่าจอดรถรายเดือน";
+        SetMerged(sheet, GroupHeaderRow, ColLumpini,      GroupHeaderRow, ColHourlyTotal,   $"ค่าจอดรถรายชั่วโมง\n{periodText}");
+        SetMerged(sheet, GroupHeaderRow, ColMinus400,     GroupHeaderRow, ColRemaining,     "ค่าจอดรถส่วนที่บริษัทช่วยเหลือ");
+        // S3:U3 month-label placeholder filled later in WriteMonthLabel.
 
-        SetMerged(sheet, GroupHeaderRow, 12, GroupHeaderRow, 12, "ค่าจอดรถรายเดือน");
+        sheet.Cell(GroupHeaderRow, ColNote).Value  = "หมายเหตุ";
+        sheet.Cell(GroupHeaderRow, ColEmail).Value = "Email";
 
-        SetMerged(sheet, GroupHeaderRow, 13, GroupHeaderRow, 15, $"ค่าจอดรถรายชั่วโมง\n{periodText}");
+        SetMerged(sheet, GroupHeaderRow, ColSummaryPhone, GroupHeaderRow, ColSummaryTotal,  "สรุปเฉพาะที่ต้องทำบันทึกหัก");
 
-        SetMerged(sheet, GroupHeaderRow, 16, GroupHeaderRow, 17, "ค่าจอดรถส่วนที่บริษัทช่วยเหลือ");
+        sheet.Cell(GroupHeaderRow, ColPayroll).Value = "Payroll Code";
 
-        // R3:T3 month-label placeholder filled later in WriteMonthLabel.
-
-        SetMerged(sheet, GroupHeaderRow, 21, GroupHeaderRow, 21, "หมายเหตุ");
-        SetMerged(sheet, GroupHeaderRow, 22, GroupHeaderRow, 22, "Email");
-
-        SetMerged(sheet, GroupHeaderRow, 23, GroupHeaderRow, 25, "สรุปเฉพาะที่ต้องทำบันทึกหัก");
-
-        SetMerged(sheet, GroupHeaderRow, 26, GroupHeaderRow, 26, "Payroll Code");
-
-        var fullHeader = sheet.Range(GroupHeaderRow, 1, GroupHeaderRow, 26);
+        var fullHeader = sheet.Range(GroupHeaderRow, 1, GroupHeaderRow, LastCol);
         fullHeader.Style.Font.Bold = true;
         fullHeader.Style.Alignment.WrapText = true;
         fullHeader.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -94,40 +136,37 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
 
     private static void WriteSubHeaders(IXLWorksheet sheet)
     {
-        sheet.Cell(SubHeaderRow, 8).Value = "หมายเหตุ";
-        sheet.Cell(SubHeaderRow, 9).Value = "ค่าโทรเกิน";
-        sheet.Cell(SubHeaderRow, 10).Value = "บริการเสริม";
-        sheet.Cell(SubHeaderRow, 11).Value = "รวม";
+        sheet.Cell(SubHeaderRow, ColPhoneRemark).Value  = "หมายเหตุ";
+        sheet.Cell(SubHeaderRow, ColPhoneExceed).Value  = "ค่าโทรเกิน";
+        sheet.Cell(SubHeaderRow, ColPhoneService).Value = "บริการเสริม";
+        sheet.Cell(SubHeaderRow, ColPhoneTotal).Value   = "รวม";
 
-        sheet.Cell(SubHeaderRow, 13).Value = "ลุมพินี ทาวเวอร์";
-        sheet.Cell(SubHeaderRow, 14).Value = "True Digital Park";
-        sheet.Cell(SubHeaderRow, 15).Value = "รวม";
+        sheet.Cell(SubHeaderRow, ColLumpini).Value      = "ลุมพินี ทาวเวอร์";
+        sheet.Cell(SubHeaderRow, ColTrueDigital).Value  = "True Digital Park";
+        sheet.Cell(SubHeaderRow, ColHourlyTotal).Value  = "รวม";
 
-        sheet.Cell(SubHeaderRow, 16).Value = "หักส่วนที่บริษัทช่วยเหลือค่าที่จอดรถ 400 บาท";
-        sheet.Cell(SubHeaderRow, 17).Value = "คงเหลือค่าที่จอดรถส่วนที่พนักงานชำระเอง";
+        sheet.Cell(SubHeaderRow, ColMinus400).Value     = "หักส่วนที่บริษัทช่วยเหลือค่าที่จอดรถ 400 บาท";
+        sheet.Cell(SubHeaderRow, ColRemaining).Value    = "คงเหลือค่าที่จอดรถส่วนที่พนักงานชำระเอง";
 
-        sheet.Cell(SubHeaderRow, 18).Value = "ค่าโทรศัพท์";
-        sheet.Cell(SubHeaderRow, 19).Value = "ค่าที่จอดรถ\n(หักสวัสดิการ 400)";
-        sheet.Cell(SubHeaderRow, 20).Value = "รวม";
+        sheet.Cell(SubHeaderRow, ColPhoneDeduct).Value  = "ค่าโทรศัพท์";
+        sheet.Cell(SubHeaderRow, ColParkDeduct).Value   = "ค่าที่จอดรถ\n(หักสวัสดิการ 400)";
+        sheet.Cell(SubHeaderRow, ColTotalDeduct).Value  = "รวม";
 
-        sheet.Cell(SubHeaderRow, 23).Value = "ค่าโทรศัพท์";
-        sheet.Cell(SubHeaderRow, 24).Value = "ค่าจอดรถนอกเหนือจากรายเดือน";
-        sheet.Cell(SubHeaderRow, 25).Value = "รวมหัก";
+        sheet.Cell(SubHeaderRow, ColSummaryPhone).Value = "ค่าโทรศัพท์";
+        sheet.Cell(SubHeaderRow, ColSummaryPark).Value  = "ค่าจอดรถนอกเหนือจากรายเดือน";
+        sheet.Cell(SubHeaderRow, ColSummaryTotal).Value = "รวมหัก";
 
-        // Merge vertical for single-cell group headers so column visually spans both rows.
-        MergeVertical(sheet, 1, 1);   // A
-        MergeVertical(sheet, 2, 2);   // B
-        MergeVertical(sheet, 3, 3);   // C
-        MergeVertical(sheet, 4, 4);   // D
-        MergeVertical(sheet, 5, 5);   // E
-        MergeVertical(sheet, 6, 6);   // F
-        MergeVertical(sheet, 7, 7);   // G
-        MergeVertical(sheet, 12, 12); // L
-        MergeVertical(sheet, 21, 21); // U
-        MergeVertical(sheet, 22, 22); // V
-        MergeVertical(sheet, 26, 26); // Z
+        // Merge vertical for all single-column headers so the column visually spans both rows.
+        foreach (var col in new[]
+        {
+            ColId, ColName, ColSalaryCode, ColCompany, ColDepartment, ColSection,
+            ColCostCenter, ColVehicleType, ColMonthlyPark, ColNote, ColEmail, ColPayroll
+        })
+        {
+            sheet.Range(GroupHeaderRow, col, SubHeaderRow, col).Merge();
+        }
 
-        var subRange = sheet.Range(SubHeaderRow, 1, SubHeaderRow, 26);
+        var subRange = sheet.Range(SubHeaderRow, 1, SubHeaderRow, LastCol);
         subRange.Style.Font.Bold = true;
         subRange.Style.Alignment.WrapText = true;
         subRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -140,8 +179,8 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
 
     private static void WriteMonthLabel(IXLWorksheet sheet, string monthLabel)
     {
-        SetMerged(sheet, GroupHeaderRow, 18, GroupHeaderRow, 20, monthLabel);
-        var range = sheet.Range(GroupHeaderRow, 18, GroupHeaderRow, 20);
+        SetMerged(sheet, GroupHeaderRow, ColPhoneDeduct, GroupHeaderRow, ColTotalDeduct, monthLabel);
+        var range = sheet.Range(GroupHeaderRow, ColPhoneDeduct, GroupHeaderRow, ColTotalDeduct);
         range.Style.Font.Bold = true;
         range.Style.Alignment.WrapText = true;
         range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -151,76 +190,113 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
     }
 
-    private static void WriteDataRow(IXLWorksheet sheet, int rowNumber, SalaryDeductionRow row)
+    private static void WriteDataRow(IXLWorksheet sheet, int r, SalaryDeductionRow row)
     {
-        sheet.Cell(rowNumber, 1).Value = row.EmployeeCode;
-        sheet.Cell(rowNumber, 2).Value = row.FullNameThName;
-        sheet.Cell(rowNumber, 3).Value = row.SalaryCode;
-        sheet.Cell(rowNumber, 4).Value = row.CompanyName;
-        sheet.Cell(rowNumber, 5).Value = row.DepartmentName;
-        sheet.Cell(rowNumber, 6).Value = row.SectionName;
-        sheet.Cell(rowNumber, 7).Value = row.CostCenter ?? string.Empty;
+        sheet.Cell(r, ColId).Value          = row.EmployeeCode;
+        sheet.Cell(r, ColName).Value        = row.FullNameThName;
+        sheet.Cell(r, ColSalaryCode).Value  = row.SalaryCode;
+        sheet.Cell(r, ColCompany).Value     = row.CompanyName;
+        sheet.Cell(r, ColDepartment).Value  = row.DepartmentName;
+        sheet.Cell(r, ColSection).Value     = row.SectionName;
+        sheet.Cell(r, ColCostCenter).Value  = row.CostCenter ?? string.Empty;
+        sheet.Cell(r, ColVehicleType).Value = MapVehicleType(row.VehicleType);
 
-        // H, I, J left blank; K = I + J formula.
-        sheet.Cell(rowNumber, 11).FormulaA1 = $"=I{rowNumber}+J{rowNumber}";
+        // I, J, K left blank; L = J + K formula.
+        var colJ = XLHelper.GetColumnLetterFromNumber(ColPhoneExceed);
+        var colK = XLHelper.GetColumnLetterFromNumber(ColPhoneService);
+        sheet.Cell(r, ColPhoneTotal).FormulaA1 = $"={colJ}{r}+{colK}{r}";
 
-        // L blank (ค่าจอดรายเดือน).
+        // M (ค่าจอดรายเดือน) left blank.
 
-        sheet.Cell(rowNumber, 13).Value = row.HourlyTotal;       // M ลุมพินี ทาวเวอร์
-        // N True Digital Park blank.
-        sheet.Cell(rowNumber, 15).Value = row.HourlyTotal;       // O รวม (value, not formula per spec)
+        sheet.Cell(r, ColLumpini).Value      = row.HourlyTotal;
+        // O (True Digital Park) blank.
 
-        sheet.Cell(rowNumber, 16).FormulaA1 = $"=M{rowNumber}-400";       // P
-        sheet.Cell(rowNumber, 17).FormulaA1 = $"=IF(P{rowNumber}<0,0,P{rowNumber})"; // Q
+        var colL = XLHelper.GetColumnLetterFromNumber(ColPhoneTotal);
+        var colN = XLHelper.GetColumnLetterFromNumber(ColLumpini);
+        var colO = XLHelper.GetColumnLetterFromNumber(ColTrueDigital);
+        var colQ = XLHelper.GetColumnLetterFromNumber(ColMinus400);
+        var colR = XLHelper.GetColumnLetterFromNumber(ColRemaining);
 
-        var sValue = Math.Max(0m, row.HourlyTotal - 400m);
-        sheet.Cell(rowNumber, 18).Value = 0m;        // R default 0.00
-        sheet.Cell(rowNumber, 19).Value = sValue;    // S = Q value (no formula)
-        sheet.Cell(rowNumber, 20).FormulaA1 = $"=R{rowNumber}+S{rowNumber}"; // T
+        sheet.Cell(r, ColHourlyTotal).FormulaA1 = $"={colN}{r}+{colO}{r}";
+        sheet.Cell(r, ColMinus400).FormulaA1    = $"={colN}{r}-400";
+        sheet.Cell(r, ColRemaining).FormulaA1   = $"=IF({colQ}{r}<0,0,{colQ}{r})";
 
-        // U blank (หมายเหตุ).
-        sheet.Cell(rowNumber, 22).Value = row.Email ?? string.Empty;
+        sheet.Cell(r, ColPhoneDeduct).FormulaA1 = $"={colL}{r}";
+        sheet.Cell(r, ColParkDeduct).FormulaA1  = $"={colR}{r}";
 
-        sheet.Cell(rowNumber, 23).FormulaA1 = $"=R{rowNumber}"; // W
-        sheet.Cell(rowNumber, 24).FormulaA1 = $"=S{rowNumber}"; // X
-        sheet.Cell(rowNumber, 25).FormulaA1 = $"=T{rowNumber}"; // Y
+        var colS = XLHelper.GetColumnLetterFromNumber(ColPhoneDeduct);
+        var colT = XLHelper.GetColumnLetterFromNumber(ColParkDeduct);
+        sheet.Cell(r, ColTotalDeduct).FormulaA1 = $"={colS}{r}+{colT}{r}";
 
-        sheet.Cell(rowNumber, 26).Value = row.PayrollCode ?? string.Empty;
+        // V (หมายเหตุ) blank.
+        sheet.Cell(r, ColEmail).Value = row.Email ?? string.Empty;
 
-        var moneyRange = sheet.Range(rowNumber, 8, rowNumber, 20);
-        moneyRange.Style.NumberFormat.Format = "#,##0.00";
-        var summaryMoney = sheet.Range(rowNumber, 23, rowNumber, 25);
-        summaryMoney.Style.NumberFormat.Format = "#,##0.00";
+        var colU = XLHelper.GetColumnLetterFromNumber(ColTotalDeduct);
+        sheet.Cell(r, ColSummaryPhone).FormulaA1 = $"={colS}{r}";
+        sheet.Cell(r, ColSummaryPark).FormulaA1  = $"={colT}{r}";
+        sheet.Cell(r, ColSummaryTotal).FormulaA1 = $"={colU}{r}";
 
-        var dataRange = sheet.Range(rowNumber, 1, rowNumber, 26);
+        sheet.Cell(r, ColPayroll).Value = row.PayrollCode ?? string.Empty;
+
+        sheet.Range(r, ColPhoneRemark, r, ColTotalDeduct).Style.NumberFormat.Format = "#,##0.00";
+        sheet.Range(r, ColSummaryPhone, r, ColSummaryTotal).Style.NumberFormat.Format = "#,##0.00";
+
+        var dataRange = sheet.Range(r, 1, r, LastCol);
         dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
         dataRange.Style.Border.InsideBorder = XLBorderStyleValues.Hair;
         dataRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        sheet.Cell(r, ColVehicleType).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-        if ((rowNumber - FirstDataRow) % 2 == 1)
+        if ((r - FirstDataRow) % 2 == 1)
         {
             dataRange.Style.Fill.BackgroundColor = BandFill;
         }
     }
 
+    private static string MapVehicleType(string code) => code switch
+    {
+        "C" => "Car",
+        "M" => "Motorcycle",
+        _   => code
+    };
+
     private static void ApplyColumnWidths(IXLWorksheet sheet)
     {
-        sheet.Column(1).Width = 8;    // A ID
-        sheet.Column(2).Width = 28;   // B Name
-        sheet.Column(3).Width = 10;   // C Salary Code
-        sheet.Column(4).Width = 22;   // D Company
-        sheet.Column(5).Width = 22;   // E Department
-        sheet.Column(6).Width = 22;   // F Section
-        sheet.Column(7).Width = 11;   // G Cost Center
-        for (var c = 8; c <= 11; c++) sheet.Column(c).Width = 11;
-        sheet.Column(12).Width = 11;
-        for (var c = 13; c <= 15; c++) sheet.Column(c).Width = 12;
-        for (var c = 16; c <= 17; c++) sheet.Column(c).Width = 14;
-        for (var c = 18; c <= 20; c++) sheet.Column(c).Width = 12;
-        sheet.Column(21).Width = 14;
-        sheet.Column(22).Width = 28;
-        for (var c = 23; c <= 25; c++) sheet.Column(c).Width = 12;
-        sheet.Column(26).Width = 12;
+        sheet.Column(ColId).Width           = 8;
+        sheet.Column(ColName).Width         = 28;
+        sheet.Column(ColSalaryCode).Width   = 10;
+        sheet.Column(ColCompany).Width      = 22;
+        sheet.Column(ColDepartment).Width   = 22;
+        sheet.Column(ColSection).Width      = 22;
+        sheet.Column(ColCostCenter).Width   = 11;
+        sheet.Column(ColVehicleType).Width  = 12;
+
+        sheet.Column(ColPhoneRemark).Width  = 11;
+        sheet.Column(ColPhoneExceed).Width  = 11;
+        sheet.Column(ColPhoneService).Width = 11;
+        sheet.Column(ColPhoneTotal).Width   = 11;
+
+        sheet.Column(ColMonthlyPark).Width  = 11;
+
+        sheet.Column(ColLumpini).Width      = 12;
+        sheet.Column(ColTrueDigital).Width  = 12;
+        sheet.Column(ColHourlyTotal).Width  = 12;
+
+        sheet.Column(ColMinus400).Width     = 14;
+        sheet.Column(ColRemaining).Width    = 14;
+
+        sheet.Column(ColPhoneDeduct).Width  = 12;
+        sheet.Column(ColParkDeduct).Width   = 12;
+        sheet.Column(ColTotalDeduct).Width  = 12;
+
+        sheet.Column(ColNote).Width         = 14;
+        sheet.Column(ColEmail).Width        = 28;
+
+        sheet.Column(ColSummaryPhone).Width = 12;
+        sheet.Column(ColSummaryPark).Width  = 12;
+        sheet.Column(ColSummaryTotal).Width = 12;
+
+        sheet.Column(ColPayroll).Width      = 12;
     }
 
     private static void SetMerged(IXLWorksheet sheet, int r1, int c1, int r2, int c2, string text)
@@ -228,11 +304,6 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         var range = sheet.Range(r1, c1, r2, c2);
         if (r1 != r2 || c1 != c2) range.Merge();
         sheet.Cell(r1, c1).Value = text;
-    }
-
-    private static void MergeVertical(IXLWorksheet sheet, int col, int colEnd)
-    {
-        sheet.Range(GroupHeaderRow, col, SubHeaderRow, colEnd).Merge();
     }
 
     private static string FormatPeriod(DateOnly start, DateOnly end)
