@@ -24,7 +24,7 @@ jobs:
           dotnet-quality: 'preview'
 
       - name: Restore
-        run: dotnet restore src/CarReports.Web/CarReports.Web.csproj
+        run: dotnet restore src/CarReports.Web/CarReports.Web.csproj -r win-x64
 
       - name: Build (Release)
         run: dotnet build src/CarReports.Web/CarReports.Web.csproj -c Release --no-restore
