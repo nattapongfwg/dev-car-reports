@@ -20,47 +20,60 @@ public sealed class CarOwnersModel : PageModel
         _logger = logger;
     }
 
-    public IReadOnlyList<VehicleRow> Vehicles { get; private set; } = Array.Empty<VehicleRow>();
+    public IReadOnlyList<CarOwner> Owners { get; private set; } = Array.Empty<CarOwner>();
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        Vehicles = await _repository.GetVehiclesAsync(cancellationToken);
+        Owners = await _repository.GetCarOwnersAsync(cancellationToken);
     }
 
     public async Task<IActionResult> OnPostUpdateAsync(
         [FromBody] UpdatePlateRequest request,
         CancellationToken cancellationToken)
     {
-        if (request is null || request.Id == Guid.Empty)
-            return BadRequest(new { error = "Missing or invalid id." });
-        if (!TryNormalizePlate(request.NewPlate, out var newPlate, out var plateError))
-            return BadRequest(new { error = plateError });
+        if (request is null) return BadRequest(new { error = "Missing request body." });
+        if (!TryNormalize(request.EmployeeCode, request.VehicleType, request.CardType, out var employeeCode, out var vehicleType, out var cardType, out var keyError))
+            return BadRequest(new { error = keyError });
+        if (!TryNormalizePlate(request.OldPlate, out var oldPlate, out var oldError))
+            return BadRequest(new { error = "Original plate is invalid: " + oldError });
+        if (!TryNormalizePlate(request.NewPlate, out var newPlate, out var newError))
+            return BadRequest(new { error = newError });
+        if (string.Equals(oldPlate, newPlate, StringComparison.Ordinal))
+            return new JsonResult(new { ok = true, plate = newPlate, unchanged = true });
 
-        var affected = await _repository.UpdatePlateByIdAsync(request.Id, newPlate, cancellationToken);
+        if (await _repository.PlateExistsForEmployeeAsync(employeeCode, newPlate, cancellationToken))
+            return BadRequest(new { error = "Employee already has a vehicle with this plate." });
+
+        var affected = await _repository.UpdatePlateAsync(employeeCode, vehicleType, cardType, oldPlate, newPlate, cancellationToken);
         if (affected == 0)
-            return NotFound(new { error = "Vehicle not found (already deleted?)." });
+            return NotFound(new { error = "No matching vehicle row found (already changed?)." });
 
-        _logger.LogInformation("Updated plate {Id} -> {Plate}", request.Id, newPlate);
-        return new JsonResult(new { ok = true, id = request.Id, plate = newPlate });
+        _logger.LogInformation("Updated plate {Old} -> {New} for {Employee} ({Bucket})",
+            oldPlate, newPlate, employeeCode, vehicleType + "-" + cardType);
+        return new JsonResult(new { ok = true, plate = newPlate });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(
-        [FromBody] DeleteRequest request,
+        [FromBody] DeletePlateRequest request,
         CancellationToken cancellationToken)
     {
-        if (request is null || request.Id == Guid.Empty)
-            return BadRequest(new { error = "Missing or invalid id." });
+        if (request is null) return BadRequest(new { error = "Missing request body." });
+        if (!TryNormalize(request.EmployeeCode, request.VehicleType, request.CardType, out var employeeCode, out var vehicleType, out var cardType, out var keyError))
+            return BadRequest(new { error = keyError });
+        if (!TryNormalizePlate(request.Plate, out var plate, out var plateError))
+            return BadRequest(new { error = plateError });
 
-        var affected = await _repository.SoftDeleteByIdAsync(request.Id, cancellationToken);
+        var affected = await _repository.SoftDeleteAsync(employeeCode, vehicleType, cardType, plate, cancellationToken);
         if (affected == 0)
-            return NotFound(new { error = "Vehicle not found." });
+            return NotFound(new { error = "No matching vehicle row found." });
 
-        _logger.LogInformation("Soft-deleted vehicle {Id}", request.Id);
-        return new JsonResult(new { ok = true, id = request.Id });
+        _logger.LogInformation("Soft-deleted plate {Plate} for {Employee} ({Bucket})",
+            plate, employeeCode, vehicleType + "-" + cardType);
+        return new JsonResult(new { ok = true });
     }
 
     public async Task<IActionResult> OnPostInsertAsync(
-        [FromBody] InsertRequest request,
+        [FromBody] InsertPlateRequest request,
         CancellationToken cancellationToken)
     {
         if (request is null) return BadRequest(new { error = "Missing request body." });
@@ -76,8 +89,9 @@ public sealed class CarOwnersModel : PageModel
         if (affected == 0)
             return NotFound(new { error = "Employee not found." });
 
-        _logger.LogInformation("Inserted plate {Plate} for {Employee} ({Bucket})", plate, employeeCode, vehicleType + "-" + cardType);
-        return new JsonResult(new { ok = true });
+        _logger.LogInformation("Inserted plate {Plate} for {Employee} ({Bucket})",
+            plate, employeeCode, vehicleType + "-" + cardType);
+        return new JsonResult(new { ok = true, plate });
     }
 
     private static bool TryNormalize(
@@ -105,7 +119,7 @@ public sealed class CarOwnersModel : PageModel
         return true;
     }
 
-    public sealed record UpdatePlateRequest(Guid Id, string? NewPlate);
-    public sealed record DeleteRequest(Guid Id);
-    public sealed record InsertRequest(string? EmployeeCode, string? VehicleType, string? CardType, string? Plate);
+    public sealed record UpdatePlateRequest(string? EmployeeCode, string? VehicleType, string? CardType, string? OldPlate, string? NewPlate);
+    public sealed record DeletePlateRequest(string? EmployeeCode, string? VehicleType, string? CardType, string? Plate);
+    public sealed record InsertPlateRequest(string? EmployeeCode, string? VehicleType, string? CardType, string? Plate);
 }

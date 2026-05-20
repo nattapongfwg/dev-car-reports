@@ -26,12 +26,6 @@ html, body {
     padding: 0 1.5rem;
 }
 
-.container-wide {
-    max-width: none;
-    margin: 0;
-    padding: 0 1.5rem;
-}
-
 header {
     background: #fff;
     border-bottom: 1px solid var(--color-border);
@@ -284,116 +278,6 @@ button:disabled:hover { background: #c4cad3; }
 }
 .owner-status.status-ok { background: #e6f4ea; color: #1b6b34; }
 .owner-status.status-err { background: #fdecec; color: #a02020; }
-
-.table-scroll-wide { max-height: 78vh; }
-
-.vehicle-table {
-    border-collapse: separate;
-    border-spacing: 0;
-    width: 100%;
-    font-size: 0.88rem;
-    table-layout: auto;
-}
-.vehicle-table thead th {
-    background: #f0f3f7;
-    color: var(--color-fg);
-    font-weight: 600;
-    text-align: left;
-    padding: 0.55rem 0.75rem;
-    border-bottom: 1px solid var(--color-border);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    white-space: nowrap;
-}
-.vehicle-table tbody td {
-    padding: 0.45rem 0.75rem;
-    border-bottom: 1px solid #eef0f4;
-    vertical-align: middle;
-    white-space: nowrap;
-}
-.vehicle-table tbody tr:hover td { background: #f9fafc; }
-.vehicle-table .col-code { font-family: "Segoe UI Mono", Consolas, monospace; font-weight: 600; color: var(--color-accent); }
-.vehicle-table .col-name { min-width: 180px; }
-.vehicle-table .col-plate { font-weight: 600; cursor: pointer; }
-.vehicle-table .col-plate:hover { background: #eef4fb; }
-.vehicle-table .col-plate.editing { background: #fff8e6 !important; padding: 0.25rem 0.5rem; cursor: default; }
-.vehicle-table .col-plate.editing:hover { background: #fff8e6 !important; }
-.vehicle-table .cell-edit-inline { display: flex; gap: 0.25rem; align-items: center; }
-.vehicle-table .cell-edit-inline .plate-input {
-    flex: 1;
-    min-width: 0;
-    padding: 0.25rem 0.4rem;
-    border: 1px solid var(--color-accent);
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-family: inherit;
-}
-.vehicle-table .cell-edit-inline button {
-    padding: 0.2rem 0.5rem;
-    font-size: 0.75rem;
-    min-width: auto;
-    border-radius: 3px;
-    line-height: 1.1;
-}
-.vehicle-table .btn-save { background: var(--color-accent); color: #fff; border: none; }
-.vehicle-table .btn-cancel { background: #fff; color: var(--color-fg); border: 1px solid var(--color-border); }
-.vehicle-table .col-actions { text-align: right; }
-.btn-del-row {
-    background: #fff;
-    color: #b22b2b;
-    border: 1px solid #e0a0a0;
-    padding: 0.2rem 0.55rem;
-    border-radius: 4px;
-    font-size: 0.78rem;
-    cursor: pointer;
-    min-width: auto;
-}
-.btn-del-row:hover { background: #b22b2b; color: #fff; }
-
-.btn-primary-sm {
-    background: var(--color-accent);
-    color: #fff;
-    border: none;
-    padding: 0.35rem 0.8rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    min-width: auto;
-}
-.btn-primary-sm:hover { filter: brightness(1.1); }
-
-/* Modal */
-.modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 28, 40, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-}
-.modal-backdrop[hidden] { display: none !important; }
-.modal-panel {
-    background: #fff;
-    border-radius: 8px;
-    padding: 1.5rem;
-    width: min(480px, 92vw);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-.modal-panel h2 { margin: 0 0 1rem; font-size: 1.1rem; }
-.modal-panel .form-row { display: flex; gap: 1rem; margin-bottom: 0.85rem; }
-.modal-panel label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; flex: 1; }
-.modal-panel input, .modal-panel select {
-    padding: 0.4rem 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 0.9rem;
-}
-.modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
-.btn-primary { background: var(--color-accent); color: #fff; border: none; padding: 0.4rem 0.9rem; border-radius: 4px; cursor: pointer; min-width: auto; }
-.btn-secondary { background: #fff; color: var(--color-fg); border: 1px solid var(--color-border); padding: 0.4rem 0.9rem; border-radius: 4px; cursor: pointer; min-width: auto; }
 
 input[type="file"] {
     padding: 0.5rem;

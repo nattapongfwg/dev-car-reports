@@ -6,17 +6,6 @@ public interface IVehicleRepository
 {
     Task<IReadOnlyList<CarOwner>> GetCarOwnersAsync(CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<VehicleRow>> GetVehiclesAsync(CancellationToken cancellationToken);
-
-    Task<int> UpdatePlateByIdAsync(
-        Guid id,
-        string newPlate,
-        CancellationToken cancellationToken);
-
-    Task<int> SoftDeleteByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken);
-
     Task<int> UpdatePlateAsync(
         string employeeCode,
         string vehicleType,
