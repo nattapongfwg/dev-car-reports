@@ -8,12 +8,13 @@
 
 <div class="page-head">
     <h1>Car Owners</h1>
-    <p class="lead">@Model.Owners.Count employees with at least one registered vehicle.</p>
+    <p class="lead">@Model.Owners.Count employees with at least one registered vehicle. Click a plate to edit; click <span class="cell-add-glyph">+</span> to add.</p>
 </div>
 
 <div class="table-toolbar">
     <input type="search" id="owner-filter" placeholder="Filter by code or name…" autocomplete="off" />
     <span id="owner-filter-count" class="filter-count">@Model.Owners.Count shown</span>
+    <span id="owner-status" class="owner-status" role="status" aria-live="polite"></span>
 </div>
 
 <div class="table-scroll">
@@ -38,23 +39,14 @@
         <tbody>
             @foreach (var o in Model.Owners)
             {
-                <tr>
+                <tr data-employee-code="@o.EmployeeCode">
                     <td class="col-code">@o.EmployeeCode</td>
                     <td class="col-name">@o.FullNameTh</td>
                     <td class="col-count">@o.TotalVehicles</td>
-                    <td>@PlateCell(o.CM1)</td>
-                    <td>@PlateCell(o.CM2)</td>
-                    <td>@PlateCell(o.CM3)</td>
-                    <td class="group-end">@PlateCell(o.CM4)</td>
-                    <td>@PlateCell(o.MM1)</td>
-                    <td>@PlateCell(o.MM2)</td>
-                    <td class="group-end">@PlateCell(o.MM3)</td>
-                    <td>@PlateCell(o.CH1)</td>
-                    <td>@PlateCell(o.CH2)</td>
-                    <td class="group-end">@PlateCell(o.CH3)</td>
-                    <td>@PlateCell(o.MH1)</td>
-                    <td>@PlateCell(o.MH2)</td>
-                    <td class="group-end">@PlateCell(o.MH3)</td>
+                    @RenderBucket(o.EmployeeCode, "C", "M", new[] { o.CM1, o.CM2, o.CM3, o.CM4 }, lastGroupEndIndex: 3)
+                    @RenderBucket(o.EmployeeCode, "M", "M", new[] { o.MM1, o.MM2, o.MM3 }, lastGroupEndIndex: 2)
+                    @RenderBucket(o.EmployeeCode, "C", "H", new[] { o.CH1, o.CH2, o.CH3 }, lastGroupEndIndex: 2)
+                    @RenderBucket(o.EmployeeCode, "M", "H", new[] { o.MH1, o.MH2, o.MH3 }, lastGroupEndIndex: 2)
                 </tr>
             }
         </tbody>
@@ -62,33 +54,67 @@
 </div>
 
 @functions {
-    private static Microsoft.AspNetCore.Html.IHtmlContent PlateCell(string? plate)
+    private static Microsoft.AspNetCore.Html.IHtmlContent RenderBucket(
+        string employeeCode, string vehicleType, string cardType,
+        string?[] slots, int lastGroupEndIndex)
     {
-        if (string.IsNullOrWhiteSpace(plate))
+        var sb = new System.Text.StringBuilder();
+        var firstEmptyIndex = -1;
+        for (var i = 0; i < slots.Length; i++)
         {
-            return new Microsoft.AspNetCore.Html.HtmlString("<span class=\"empty\">—</span>");
+            if (string.IsNullOrWhiteSpace(slots[i])) { firstEmptyIndex = i; break; }
         }
-        var encoded = Microsoft.AspNetCore.Html.HtmlString.Empty;
-        return new Microsoft.AspNetCore.Html.HtmlString(System.Net.WebUtility.HtmlEncode(plate));
+
+        for (var i = 0; i < slots.Length; i++)
+        {
+            var classes = new List<string>();
+            if (i == lastGroupEndIndex) classes.Add("group-end");
+
+            var plate = slots[i];
+            string inner;
+            string state;
+
+            if (!string.IsNullOrWhiteSpace(plate))
+            {
+                classes.Add("cell-plate");
+                state = "plate";
+                inner = $"<span class=\"plate-text\">{System.Net.WebUtility.HtmlEncode(plate)}</span>";
+            }
+            else if (i == firstEmptyIndex)
+            {
+                classes.Add("cell-add");
+                state = "add";
+                inner = "<button type=\"button\" class=\"plate-add-btn\" aria-label=\"Add vehicle\">+</button>";
+            }
+            else
+            {
+                classes.Add("cell-empty");
+                state = "empty";
+                inner = "<span class=\"empty\">—</span>";
+            }
+
+            var classAttr = string.Join(' ', classes);
+            var plateAttr = string.IsNullOrWhiteSpace(plate) ? string.Empty : $" data-plate=\"{System.Net.WebUtility.HtmlEncode(plate)}\"";
+            sb.Append($"<td class=\"{classAttr}\" data-state=\"{state}\" data-employee-code=\"{System.Net.WebUtility.HtmlEncode(employeeCode)}\" data-vehicle-type=\"{vehicleType}\" data-card-type=\"{cardType}\" data-bucket=\"{vehicleType}-{cardType}\"{plateAttr}>{inner}</td>");
+        }
+        return new Microsoft.AspNetCore.Html.HtmlString(sb.ToString());
     }
 }
 
 <script>
     (function () {
+        var table = document.getElementById('owner-table');
         var input = document.getElementById('owner-filter');
         var counter = document.getElementById('owner-filter-count');
-        var rows = document.querySelectorAll('#owner-table tbody tr');
+        var status = document.getElementById('owner-status');
+        var rows = table.querySelectorAll('tbody tr');
         var total = rows.length;
 
-        function refresh() {
+        function refreshFilter() {
             var q = input.value.trim().toLowerCase();
             var visible = 0;
             rows.forEach(function (row) {
-                if (q === '') {
-                    row.style.display = '';
-                    visible++;
-                    return;
-                }
+                if (q === '') { row.style.display = ''; visible++; return; }
                 var code = row.children[0].textContent.toLowerCase();
                 var name = row.children[1].textContent.toLowerCase();
                 var match = code.indexOf(q) !== -1 || name.indexOf(q) !== -1;
@@ -97,7 +123,202 @@
             });
             counter.textContent = visible + ' of ' + total + ' shown';
         }
+        input.addEventListener('input', refreshFilter);
 
-        input.addEventListener('input', refresh);
+        function setStatus(msg, kind) {
+            status.textContent = msg || '';
+            status.className = 'owner-status' + (kind ? ' status-' + kind : '');
+            if (msg) {
+                clearTimeout(setStatus._t);
+                setStatus._t = setTimeout(function () { status.textContent = ''; status.className = 'owner-status'; }, 4000);
+            }
+        }
+
+        async function postJson(handler, payload) {
+            var res = await fetch('?handler=' + handler, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = null;
+            try { data = await res.json(); } catch (e) { /* may be empty */ }
+            if (!res.ok) {
+                throw new Error((data && data.error) || ('HTTP ' + res.status));
+            }
+            return data || {};
+        }
+
+        function bucketCellsOf(row, bucket) {
+            return row.querySelectorAll('td[data-bucket="' + bucket + '"]');
+        }
+
+        function totalCellOf(row) {
+            return row.querySelector('td.col-count');
+        }
+
+        function rebucket(row, bucket) {
+            // Walk bucket cells in slot order; first empty becomes the add button, rest become em-dashes.
+            var cells = bucketCellsOf(row, bucket);
+            var firstEmptySeen = false;
+            cells.forEach(function (cell) {
+                if (cell.dataset.state === 'plate') return;
+                if (!firstEmptySeen) {
+                    firstEmptySeen = true;
+                    setCellAdd(cell);
+                } else {
+                    setCellEmpty(cell);
+                }
+            });
+        }
+
+        function setCellPlate(cell, plate) {
+            cell.dataset.state = 'plate';
+            cell.dataset.plate = plate;
+            cell.classList.remove('cell-add', 'cell-empty', 'editing');
+            cell.classList.add('cell-plate');
+            cell.innerHTML = '<span class="plate-text"></span>';
+            cell.querySelector('.plate-text').textContent = plate;
+        }
+
+        function setCellAdd(cell) {
+            cell.dataset.state = 'add';
+            delete cell.dataset.plate;
+            cell.classList.remove('cell-plate', 'cell-empty', 'editing');
+            cell.classList.add('cell-add');
+            cell.innerHTML = '<button type="button" class="plate-add-btn" aria-label="Add vehicle">+</button>';
+        }
+
+        function setCellEmpty(cell) {
+            cell.dataset.state = 'empty';
+            delete cell.dataset.plate;
+            cell.classList.remove('cell-plate', 'cell-add', 'editing');
+            cell.classList.add('cell-empty');
+            cell.innerHTML = '<span class="empty">—</span>';
+        }
+
+        function bumpTotal(row, delta) {
+            var totalCell = totalCellOf(row);
+            var n = parseInt(totalCell.textContent, 10);
+            if (!isNaN(n)) totalCell.textContent = String(n + delta);
+        }
+
+        function exitEdit(cell) {
+            cell.classList.remove('editing');
+        }
+
+        function enterEditPlate(cell) {
+            if (cell.classList.contains('editing')) return;
+            cell.classList.add('editing');
+            var oldPlate = cell.dataset.plate;
+            cell.innerHTML =
+                '<div class="cell-edit">' +
+                  '<input type="text" class="plate-input" maxlength="20" />' +
+                  '<div class="cell-edit-row">' +
+                    '<button type="button" class="btn-save">Save</button>' +
+                    '<button type="button" class="btn-del">Delete</button>' +
+                    '<button type="button" class="btn-cancel">Cancel</button>' +
+                  '</div>' +
+                '</div>';
+            var inp = cell.querySelector('.plate-input');
+            inp.value = oldPlate;
+            inp.focus();
+            inp.select();
+
+            cell.querySelector('.btn-cancel').addEventListener('click', function () {
+                setCellPlate(cell, oldPlate);
+            });
+            cell.querySelector('.btn-save').addEventListener('click', async function () {
+                var newPlate = inp.value.trim();
+                if (newPlate === oldPlate) { setCellPlate(cell, oldPlate); return; }
+                if (!newPlate) { setStatus('Plate cannot be empty.', 'err'); return; }
+                try {
+                    var data = await postJson('Update', {
+                        employeeCode: cell.dataset.employeeCode,
+                        vehicleType: cell.dataset.vehicleType,
+                        cardType: cell.dataset.cardType,
+                        oldPlate: oldPlate,
+                        newPlate: newPlate
+                    });
+                    setCellPlate(cell, data.plate || newPlate);
+                    setStatus('Updated ' + oldPlate + ' → ' + (data.plate || newPlate), 'ok');
+                } catch (err) {
+                    setStatus(err.message, 'err');
+                }
+            });
+            cell.querySelector('.btn-del').addEventListener('click', async function () {
+                if (!confirm('Soft-delete plate ' + oldPlate + '?')) return;
+                try {
+                    await postJson('Delete', {
+                        employeeCode: cell.dataset.employeeCode,
+                        vehicleType: cell.dataset.vehicleType,
+                        cardType: cell.dataset.cardType,
+                        plate: oldPlate
+                    });
+                    cell.dataset.state = 'empty';
+                    delete cell.dataset.plate;
+                    rebucket(cell.closest('tr'), cell.dataset.bucket);
+                    bumpTotal(cell.closest('tr'), -1);
+                    setStatus('Deleted ' + oldPlate, 'ok');
+                } catch (err) {
+                    setStatus(err.message, 'err');
+                }
+            });
+            inp.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') cell.querySelector('.btn-save').click();
+                if (e.key === 'Escape') cell.querySelector('.btn-cancel').click();
+            });
+        }
+
+        function enterAddPlate(cell) {
+            if (cell.classList.contains('editing')) return;
+            cell.classList.add('editing');
+            cell.innerHTML =
+                '<div class="cell-edit">' +
+                  '<input type="text" class="plate-input" maxlength="20" placeholder="Plate" />' +
+                  '<div class="cell-edit-row">' +
+                    '<button type="button" class="btn-save">Add</button>' +
+                    '<button type="button" class="btn-cancel">Cancel</button>' +
+                  '</div>' +
+                '</div>';
+            var inp = cell.querySelector('.plate-input');
+            inp.focus();
+
+            cell.querySelector('.btn-cancel').addEventListener('click', function () {
+                setCellAdd(cell);
+            });
+            cell.querySelector('.btn-save').addEventListener('click', async function () {
+                var plate = inp.value.trim();
+                if (!plate) { setStatus('Plate cannot be empty.', 'err'); return; }
+                try {
+                    var data = await postJson('Insert', {
+                        employeeCode: cell.dataset.employeeCode,
+                        vehicleType: cell.dataset.vehicleType,
+                        cardType: cell.dataset.cardType,
+                        plate: plate
+                    });
+                    setCellPlate(cell, data.plate || plate);
+                    rebucket(cell.closest('tr'), cell.dataset.bucket);
+                    bumpTotal(cell.closest('tr'), 1);
+                    setStatus('Added ' + (data.plate || plate), 'ok');
+                } catch (err) {
+                    setStatus(err.message, 'err');
+                }
+            });
+            inp.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') cell.querySelector('.btn-save').click();
+                if (e.key === 'Escape') cell.querySelector('.btn-cancel').click();
+            });
+        }
+
+        table.addEventListener('click', function (e) {
+            var cell = e.target.closest('td');
+            if (!cell || !table.contains(cell)) return;
+            if (cell.classList.contains('editing')) return;
+            if (cell.dataset.state === 'plate') {
+                enterEditPlate(cell);
+            } else if (cell.dataset.state === 'add') {
+                enterAddPlate(cell);
+            }
+        });
     })();
 </script>

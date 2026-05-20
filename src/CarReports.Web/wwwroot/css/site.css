@@ -228,6 +228,57 @@ button:disabled:hover { background: #c4cad3; }
 
 .owner-table .empty { color: #c4cad3; }
 
+.owner-table td.cell-plate { cursor: pointer; }
+.owner-table td.cell-plate:hover { background: #eef4fb; }
+.owner-table td.cell-plate .plate-text { display: inline-block; padding: 0.05rem 0.35rem; border-radius: 4px; }
+
+.owner-table td.cell-add { cursor: pointer; padding: 0.2rem; }
+.owner-table .plate-add-btn {
+    background: transparent;
+    color: var(--color-accent);
+    border: 1px dashed var(--color-accent);
+    border-radius: 4px;
+    padding: 0.1rem 0.55rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.1;
+    cursor: pointer;
+    min-width: auto;
+}
+.owner-table .plate-add-btn:hover { background: var(--color-accent); color: #fff; }
+.cell-add-glyph { color: var(--color-accent); font-weight: 700; }
+
+.owner-table td.editing { background: #fff8e6 !important; padding: 0.25rem; }
+.owner-table .cell-edit { display: flex; flex-direction: column; gap: 0.25rem; align-items: stretch; }
+.owner-table .cell-edit .plate-input {
+    width: 100%;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid var(--color-accent);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: inherit;
+}
+.owner-table .cell-edit-row { display: flex; gap: 0.2rem; justify-content: center; }
+.owner-table .cell-edit-row button {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.72rem;
+    border-radius: 3px;
+    min-width: auto;
+    line-height: 1.1;
+}
+.owner-table .btn-save { background: var(--color-accent); color: #fff; border: none; }
+.owner-table .btn-del { background: #b22b2b; color: #fff; border: none; }
+.owner-table .btn-cancel { background: #fff; color: var(--color-fg); border: 1px solid var(--color-border); }
+
+.owner-status {
+    font-size: 0.85rem;
+    margin-left: 1rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+}
+.owner-status.status-ok { background: #e6f4ea; color: #1b6b34; }
+.owner-status.status-err { background: #fdecec; color: #a02020; }
+
 input[type="file"] {
     padding: 0.5rem;
     border: 1px dashed var(--color-border);
