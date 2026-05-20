@@ -2,128 +2,113 @@
 @model CarOwnersModel
 @{
     ViewData["Title"] = "Car Owners";
+    ViewData["MainClass"] = "container-wide";
 }
 
 <p><a asp-page="/Index" class="back-link">&larr; Back</a></p>
 
 <div class="page-head">
     <h1>Car Owners</h1>
-    <p class="lead">@Model.Owners.Count employees with at least one registered vehicle. Click a plate to edit; click <span class="cell-add-glyph">+</span> to add.</p>
+    <p class="lead">@Model.Vehicles.Count active vehicles. Click a plate to edit.</p>
 </div>
 
 <div class="table-toolbar">
-    <input type="search" id="owner-filter" placeholder="Filter by code or name…" autocomplete="off" />
-    <span id="owner-filter-count" class="filter-count">@Model.Owners.Count shown</span>
-    <span id="owner-status" class="owner-status" role="status" aria-live="polite"></span>
+    <input type="search" id="vehicle-filter" placeholder="Filter by code, name, plate, brand…" autocomplete="off" />
+    <span id="vehicle-filter-count" class="filter-count">@Model.Vehicles.Count shown</span>
+    <button type="button" id="btn-add-vehicle" class="btn-primary-sm">+ Add Vehicle</button>
+    <span id="vehicle-status" class="owner-status" role="status" aria-live="polite"></span>
 </div>
 
-<div class="table-scroll">
-    <table class="owner-table" id="owner-table">
+<div class="table-scroll table-scroll-wide">
+    <table class="vehicle-table" id="vehicle-table">
         <thead>
-            <tr class="group-row">
-                <th rowspan="2" class="col-code">ID</th>
-                <th rowspan="2" class="col-name">Full Name (TH)</th>
-                <th rowspan="2" class="col-count">Total</th>
-                <th colspan="4" class="group group-cm">Car / Monthly</th>
-                <th colspan="3" class="group group-mm">Motor / Monthly</th>
-                <th colspan="3" class="group group-ch">Car / Hourly</th>
-                <th colspan="3" class="group group-mh">Motor / Hourly</th>
-            </tr>
-            <tr class="slot-row">
-                <th>C-M 1</th><th>C-M 2</th><th>C-M 3</th><th class="group-end">C-M 4</th>
-                <th>M-M 1</th><th>M-M 2</th><th class="group-end">M-M 3</th>
-                <th>C-H 1</th><th>C-H 2</th><th class="group-end">C-H 3</th>
-                <th>M-H 1</th><th>M-H 2</th><th class="group-end">M-H 3</th>
+            <tr>
+                <th class="col-code">Code</th>
+                <th class="col-name">Full Name (TH)</th>
+                <th class="col-type">Type</th>
+                <th class="col-card">Card</th>
+                <th class="col-plate">Plate</th>
+                <th class="col-province">Province</th>
+                <th class="col-brand">Brand</th>
+                <th class="col-model">Model</th>
+                <th class="col-color">Color</th>
+                <th class="col-actions">Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var o in Model.Owners)
+            @foreach (var v in Model.Vehicles)
             {
-                <tr data-employee-code="@o.EmployeeCode">
-                    <td class="col-code">@o.EmployeeCode</td>
-                    <td class="col-name">@o.FullNameTh</td>
-                    <td class="col-count">@o.TotalVehicles</td>
-                    @RenderBucket(o.EmployeeCode, "C", "M", new[] { o.CM1, o.CM2, o.CM3, o.CM4 }, lastGroupEndIndex: 3)
-                    @RenderBucket(o.EmployeeCode, "M", "M", new[] { o.MM1, o.MM2, o.MM3 }, lastGroupEndIndex: 2)
-                    @RenderBucket(o.EmployeeCode, "C", "H", new[] { o.CH1, o.CH2, o.CH3 }, lastGroupEndIndex: 2)
-                    @RenderBucket(o.EmployeeCode, "M", "H", new[] { o.MH1, o.MH2, o.MH3 }, lastGroupEndIndex: 2)
+                <tr data-id="@v.Id" data-employee-code="@v.EmployeeCode">
+                    <td class="col-code">@v.EmployeeCode</td>
+                    <td class="col-name">@v.FullNameTh</td>
+                    <td class="col-type">@VehicleTypeLabel(v.VehicleType)</td>
+                    <td class="col-card">@CardTypeLabel(v.CardType)</td>
+                    <td class="col-plate cell-plate" data-plate="@v.LicensePlate">
+                        <span class="plate-text">@v.LicensePlate</span>
+                    </td>
+                    <td class="col-province">@(v.LicenseProvince ?? "")</td>
+                    <td class="col-brand">@(v.Brand ?? "")</td>
+                    <td class="col-model">@(v.Model ?? "")</td>
+                    <td class="col-color">@(v.Color ?? "")</td>
+                    <td class="col-actions">
+                        <button type="button" class="btn-del-row" aria-label="Delete">Delete</button>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
 
+<div id="add-modal" class="modal-backdrop" hidden>
+    <div class="modal-panel" role="dialog" aria-label="Add vehicle">
+        <h2>Add vehicle</h2>
+        <div class="form-row"><label>Employee code <input type="text" id="add-code" maxlength="50" /></label></div>
+        <div class="form-row">
+            <label>Type
+                <select id="add-type">
+                    <option value="C">Car</option>
+                    <option value="M">Motorcycle</option>
+                </select>
+            </label>
+            <label>Card
+                <select id="add-card">
+                    <option value="M">Monthly</option>
+                    <option value="H">Hourly</option>
+                </select>
+            </label>
+        </div>
+        <div class="form-row"><label>Plate <input type="text" id="add-plate" maxlength="20" /></label></div>
+        <div class="modal-actions">
+            <button type="button" id="add-cancel" class="btn-secondary">Cancel</button>
+            <button type="button" id="add-save" class="btn-primary">Add</button>
+        </div>
+    </div>
+</div>
+
 @functions {
-    private static Microsoft.AspNetCore.Html.IHtmlContent RenderBucket(
-        string employeeCode, string vehicleType, string cardType,
-        string?[] slots, int lastGroupEndIndex)
+    private static string VehicleTypeLabel(string? code) => code switch
     {
-        var sb = new System.Text.StringBuilder();
-        var firstEmptyIndex = -1;
-        for (var i = 0; i < slots.Length; i++)
-        {
-            if (string.IsNullOrWhiteSpace(slots[i])) { firstEmptyIndex = i; break; }
-        }
+        "C" => "Car",
+        "M" => "Motorcycle",
+        _ => code ?? string.Empty
+    };
 
-        for (var i = 0; i < slots.Length; i++)
-        {
-            var classes = new List<string>();
-            if (i == lastGroupEndIndex) classes.Add("group-end");
-
-            var plate = slots[i];
-            string inner;
-            string state;
-
-            if (!string.IsNullOrWhiteSpace(plate))
-            {
-                classes.Add("cell-plate");
-                state = "plate";
-                inner = $"<span class=\"plate-text\">{System.Net.WebUtility.HtmlEncode(plate)}</span>";
-            }
-            else if (i == firstEmptyIndex)
-            {
-                classes.Add("cell-add");
-                state = "add";
-                inner = "<button type=\"button\" class=\"plate-add-btn\" aria-label=\"Add vehicle\">+</button>";
-            }
-            else
-            {
-                classes.Add("cell-empty");
-                state = "empty";
-                inner = "<span class=\"empty\">—</span>";
-            }
-
-            var classAttr = string.Join(' ', classes);
-            var plateAttr = string.IsNullOrWhiteSpace(plate) ? string.Empty : $" data-plate=\"{System.Net.WebUtility.HtmlEncode(plate)}\"";
-            sb.Append($"<td class=\"{classAttr}\" data-state=\"{state}\" data-employee-code=\"{System.Net.WebUtility.HtmlEncode(employeeCode)}\" data-vehicle-type=\"{vehicleType}\" data-card-type=\"{cardType}\" data-bucket=\"{vehicleType}-{cardType}\"{plateAttr}>{inner}</td>");
-        }
-        return new Microsoft.AspNetCore.Html.HtmlString(sb.ToString());
-    }
+    private static string CardTypeLabel(string? code) => code switch
+    {
+        "M" => "Monthly",
+        "H" => "Hourly",
+        null => string.Empty,
+        _ => code
+    };
 }
 
 <script>
     (function () {
-        var table = document.getElementById('owner-table');
-        var input = document.getElementById('owner-filter');
-        var counter = document.getElementById('owner-filter-count');
-        var status = document.getElementById('owner-status');
-        var rows = table.querySelectorAll('tbody tr');
-        var total = rows.length;
-
-        function refreshFilter() {
-            var q = input.value.trim().toLowerCase();
-            var visible = 0;
-            rows.forEach(function (row) {
-                if (q === '') { row.style.display = ''; visible++; return; }
-                var code = row.children[0].textContent.toLowerCase();
-                var name = row.children[1].textContent.toLowerCase();
-                var match = code.indexOf(q) !== -1 || name.indexOf(q) !== -1;
-                row.style.display = match ? '' : 'none';
-                if (match) visible++;
-            });
-            counter.textContent = visible + ' of ' + total + ' shown';
-        }
-        input.addEventListener('input', refreshFilter);
+        var table = document.getElementById('vehicle-table');
+        var input = document.getElementById('vehicle-filter');
+        var counter = document.getElementById('vehicle-filter-count');
+        var status = document.getElementById('vehicle-status');
+        var rows = function () { return table.querySelectorAll('tbody tr'); };
 
         function setStatus(msg, kind) {
             status.textContent = msg || '';
@@ -134,6 +119,21 @@
             }
         }
 
+        function refreshFilter() {
+            var q = input.value.trim().toLowerCase();
+            var all = rows();
+            var visible = 0;
+            all.forEach(function (row) {
+                if (q === '') { row.style.display = ''; visible++; return; }
+                var text = row.textContent.toLowerCase();
+                var match = text.indexOf(q) !== -1;
+                row.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            counter.textContent = visible + ' of ' + all.length + ' shown';
+        }
+        input.addEventListener('input', refreshFilter);
+
         async function postJson(handler, payload) {
             var res = await fetch('?handler=' + handler, {
                 method: 'POST',
@@ -141,183 +141,114 @@
                 body: JSON.stringify(payload)
             });
             var data = null;
-            try { data = await res.json(); } catch (e) { /* may be empty */ }
+            try { data = await res.json(); } catch (e) { /* empty body ok */ }
             if (!res.ok) {
                 throw new Error((data && data.error) || ('HTTP ' + res.status));
             }
             return data || {};
         }
 
-        function bucketCellsOf(row, bucket) {
-            return row.querySelectorAll('td[data-bucket="' + bucket + '"]');
-        }
-
-        function totalCellOf(row) {
-            return row.querySelector('td.col-count');
-        }
-
-        function rebucket(row, bucket) {
-            // Walk bucket cells in slot order; first empty becomes the add button, rest become em-dashes.
-            var cells = bucketCellsOf(row, bucket);
-            var firstEmptySeen = false;
-            cells.forEach(function (cell) {
-                if (cell.dataset.state === 'plate') return;
-                if (!firstEmptySeen) {
-                    firstEmptySeen = true;
-                    setCellAdd(cell);
-                } else {
-                    setCellEmpty(cell);
-                }
-            });
-        }
-
-        function setCellPlate(cell, plate) {
-            cell.dataset.state = 'plate';
-            cell.dataset.plate = plate;
-            cell.classList.remove('cell-add', 'cell-empty', 'editing');
-            cell.classList.add('cell-plate');
-            cell.innerHTML = '<span class="plate-text"></span>';
-            cell.querySelector('.plate-text').textContent = plate;
-        }
-
-        function setCellAdd(cell) {
-            cell.dataset.state = 'add';
-            delete cell.dataset.plate;
-            cell.classList.remove('cell-plate', 'cell-empty', 'editing');
-            cell.classList.add('cell-add');
-            cell.innerHTML = '<button type="button" class="plate-add-btn" aria-label="Add vehicle">+</button>';
-        }
-
-        function setCellEmpty(cell) {
-            cell.dataset.state = 'empty';
-            delete cell.dataset.plate;
-            cell.classList.remove('cell-plate', 'cell-add', 'editing');
-            cell.classList.add('cell-empty');
-            cell.innerHTML = '<span class="empty">—</span>';
-        }
-
-        function bumpTotal(row, delta) {
-            var totalCell = totalCellOf(row);
-            var n = parseInt(totalCell.textContent, 10);
-            if (!isNaN(n)) totalCell.textContent = String(n + delta);
-        }
-
-        function exitEdit(cell) {
-            cell.classList.remove('editing');
-        }
-
         function enterEditPlate(cell) {
             if (cell.classList.contains('editing')) return;
-            cell.classList.add('editing');
             var oldPlate = cell.dataset.plate;
+            cell.classList.add('editing');
             cell.innerHTML =
-                '<div class="cell-edit">' +
+                '<div class="cell-edit-inline">' +
                   '<input type="text" class="plate-input" maxlength="20" />' +
-                  '<div class="cell-edit-row">' +
-                    '<button type="button" class="btn-save">Save</button>' +
-                    '<button type="button" class="btn-del">Delete</button>' +
-                    '<button type="button" class="btn-cancel">Cancel</button>' +
-                  '</div>' +
+                  '<button type="button" class="btn-save">Save</button>' +
+                  '<button type="button" class="btn-cancel">Cancel</button>' +
                 '</div>';
             var inp = cell.querySelector('.plate-input');
             inp.value = oldPlate;
             inp.focus();
             inp.select();
 
-            cell.querySelector('.btn-cancel').addEventListener('click', function () {
-                setCellPlate(cell, oldPlate);
-            });
+            function revert() {
+                cell.classList.remove('editing');
+                cell.innerHTML = '<span class="plate-text"></span>';
+                cell.querySelector('.plate-text').textContent = oldPlate;
+            }
+
+            cell.querySelector('.btn-cancel').addEventListener('click', revert);
             cell.querySelector('.btn-save').addEventListener('click', async function () {
                 var newPlate = inp.value.trim();
-                if (newPlate === oldPlate) { setCellPlate(cell, oldPlate); return; }
                 if (!newPlate) { setStatus('Plate cannot be empty.', 'err'); return; }
+                if (newPlate === oldPlate) { revert(); return; }
+                var id = cell.closest('tr').dataset.id;
                 try {
-                    var data = await postJson('Update', {
-                        employeeCode: cell.dataset.employeeCode,
-                        vehicleType: cell.dataset.vehicleType,
-                        cardType: cell.dataset.cardType,
-                        oldPlate: oldPlate,
-                        newPlate: newPlate
-                    });
-                    setCellPlate(cell, data.plate || newPlate);
+                    var data = await postJson('Update', { id: id, newPlate: newPlate });
+                    cell.classList.remove('editing');
+                    cell.dataset.plate = data.plate || newPlate;
+                    cell.innerHTML = '<span class="plate-text"></span>';
+                    cell.querySelector('.plate-text').textContent = data.plate || newPlate;
                     setStatus('Updated ' + oldPlate + ' → ' + (data.plate || newPlate), 'ok');
                 } catch (err) {
                     setStatus(err.message, 'err');
                 }
             });
-            cell.querySelector('.btn-del').addEventListener('click', async function () {
-                if (!confirm('Soft-delete plate ' + oldPlate + '?')) return;
-                try {
-                    await postJson('Delete', {
-                        employeeCode: cell.dataset.employeeCode,
-                        vehicleType: cell.dataset.vehicleType,
-                        cardType: cell.dataset.cardType,
-                        plate: oldPlate
-                    });
-                    cell.dataset.state = 'empty';
-                    delete cell.dataset.plate;
-                    rebucket(cell.closest('tr'), cell.dataset.bucket);
-                    bumpTotal(cell.closest('tr'), -1);
-                    setStatus('Deleted ' + oldPlate, 'ok');
-                } catch (err) {
-                    setStatus(err.message, 'err');
-                }
-            });
             inp.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') cell.querySelector('.btn-save').click();
-                if (e.key === 'Escape') cell.querySelector('.btn-cancel').click();
+                if (e.key === 'Escape') revert();
             });
         }
 
-        function enterAddPlate(cell) {
-            if (cell.classList.contains('editing')) return;
-            cell.classList.add('editing');
-            cell.innerHTML =
-                '<div class="cell-edit">' +
-                  '<input type="text" class="plate-input" maxlength="20" placeholder="Plate" />' +
-                  '<div class="cell-edit-row">' +
-                    '<button type="button" class="btn-save">Add</button>' +
-                    '<button type="button" class="btn-cancel">Cancel</button>' +
-                  '</div>' +
-                '</div>';
-            var inp = cell.querySelector('.plate-input');
-            inp.focus();
-
-            cell.querySelector('.btn-cancel').addEventListener('click', function () {
-                setCellAdd(cell);
-            });
-            cell.querySelector('.btn-save').addEventListener('click', async function () {
-                var plate = inp.value.trim();
-                if (!plate) { setStatus('Plate cannot be empty.', 'err'); return; }
+        table.addEventListener('click', async function (e) {
+            var delBtn = e.target.closest('.btn-del-row');
+            if (delBtn) {
+                var row = delBtn.closest('tr');
+                var plate = row.querySelector('.col-plate').dataset.plate;
+                if (!confirm('Delete plate ' + plate + ' for employee ' + row.dataset.employeeCode + '?')) return;
                 try {
-                    var data = await postJson('Insert', {
-                        employeeCode: cell.dataset.employeeCode,
-                        vehicleType: cell.dataset.vehicleType,
-                        cardType: cell.dataset.cardType,
-                        plate: plate
-                    });
-                    setCellPlate(cell, data.plate || plate);
-                    rebucket(cell.closest('tr'), cell.dataset.bucket);
-                    bumpTotal(cell.closest('tr'), 1);
-                    setStatus('Added ' + (data.plate || plate), 'ok');
+                    await postJson('Delete', { id: row.dataset.id });
+                    row.remove();
+                    setStatus('Deleted ' + plate, 'ok');
+                    refreshFilter();
                 } catch (err) {
                     setStatus(err.message, 'err');
                 }
-            });
-            inp.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') cell.querySelector('.btn-save').click();
-                if (e.key === 'Escape') cell.querySelector('.btn-cancel').click();
-            });
-        }
-
-        table.addEventListener('click', function (e) {
-            var cell = e.target.closest('td');
-            if (!cell || !table.contains(cell)) return;
-            if (cell.classList.contains('editing')) return;
-            if (cell.dataset.state === 'plate') {
+                return;
+            }
+            var cell = e.target.closest('td.col-plate');
+            if (cell && !cell.classList.contains('editing')) {
                 enterEditPlate(cell);
-            } else if (cell.dataset.state === 'add') {
-                enterAddPlate(cell);
+            }
+        });
+
+        // Add modal
+        var modal = document.getElementById('add-modal');
+        var addCode = document.getElementById('add-code');
+        var addType = document.getElementById('add-type');
+        var addCard = document.getElementById('add-card');
+        var addPlate = document.getElementById('add-plate');
+
+        function openModal() {
+            addCode.value = ''; addType.value = 'C'; addCard.value = 'M'; addPlate.value = '';
+            modal.hidden = false;
+            addCode.focus();
+        }
+        function closeModal() { modal.hidden = true; }
+
+        document.getElementById('btn-add-vehicle').addEventListener('click', openModal);
+        document.getElementById('add-cancel').addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+        document.getElementById('add-save').addEventListener('click', async function () {
+            var payload = {
+                employeeCode: addCode.value.trim(),
+                vehicleType: addType.value,
+                cardType: addCard.value,
+                plate: addPlate.value.trim()
+            };
+            if (!payload.employeeCode || !payload.plate) {
+                setStatus('Employee code and plate are required.', 'err');
+                return;
+            }
+            try {
+                await postJson('Insert', payload);
+                setStatus('Added ' + payload.plate + ' for ' + payload.employeeCode + '. Reloading…', 'ok');
+                closeModal();
+                setTimeout(function () { window.location.reload(); }, 700);
+            } catch (err) {
+                setStatus(err.message, 'err');
             }
         });
     })();
