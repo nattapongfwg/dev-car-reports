@@ -13,4 +13,5 @@ public sealed record EmployeeVehicleMapping(
     string? Email,
     string? BusinessPhone,
     string? VehicleType,
-    string? PayrollCode);
+    string? PayrollCode,
+    string? CardType = null);

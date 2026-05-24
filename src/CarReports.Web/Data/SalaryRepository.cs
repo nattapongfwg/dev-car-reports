@@ -1,3 +1,4 @@
+using System.Globalization;
 using CarReports.Web.Models;
 using Dapper;
 
@@ -19,7 +20,8 @@ public sealed class SalaryRepository : ISalaryRepository
             email              AS Email,
             business_phone     AS BusinessPhone,
             vehicle_type       AS VehicleType,
-            payroll_code       AS PayrollCode
+            payroll_code       AS PayrollCode,
+            card_type          AS CardType
         FROM dbo.v_employee_vehicle_mapping
         """;
 
@@ -46,4 +48,30 @@ public sealed class SalaryRepository : ISalaryRepository
         var rows = await connection.QueryAsync<EmployeeVehicleMapping>(command);
         return rows.FirstOrDefault();
     }
+
+    public async Task<IReadOnlyDictionary<string, decimal>> GetVehicleMonthlyFeesAsync(CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT lov_code AS Code, lov_val1 AS Value
+              FROM dbo.m_cfg_lov
+             WHERE lov_type = 'VEHICLE_TYPE';
+            """;
+
+        using var connection = _connectionFactory.Create();
+        var command = new CommandDefinition(sql, cancellationToken: cancellationToken);
+        var rows = await connection.QueryAsync<LovRow>(command);
+
+        var fees = new Dictionary<string, decimal>(StringComparer.Ordinal);
+        foreach (var row in rows)
+        {
+            if (string.IsNullOrWhiteSpace(row.Code) || row.Value is null) continue;
+            if (decimal.TryParse(row.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var fee))
+            {
+                fees[row.Code] = fee;
+            }
+        }
+        return fees;
+    }
+
+    private sealed record LovRow(string Code, string? Value);
 }

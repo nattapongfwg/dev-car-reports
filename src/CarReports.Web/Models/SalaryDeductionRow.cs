@@ -12,5 +12,7 @@ public sealed record SalaryDeductionRow(
     string? PayrollCode,
     string? VehicleType,
     decimal HourlyTotal,
+    string? PhoneNo = null,
     decimal PhoneExcess = 0m,
-    decimal PhoneService = 0m);
+    decimal PhoneService = 0m,
+    decimal MonthlyAmount = 0m);

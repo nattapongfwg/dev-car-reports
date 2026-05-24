@@ -6,57 +6,60 @@ namespace CarReports.Web.Excel;
 
 public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
 {
-    private const string SheetName = "Report_Salary";
-    private const int GroupHeaderRow = 3;
-    private const int SubHeaderRow = 4;
-    private const int FirstDataRow = 5;
-    private const int LastCol = 27;
+    private const string SheetName     = "Report_Salary";
+    private const int GroupHeaderRow   = 3;
+    private const int SubHeaderRow     = 4;
+    private const int FirstDataRow     = 5;
+    private const int LastCol          = 28;  // through AB (was 27 before "Phone No." was inserted at I)
 
-    // Column positions (1-based)
-    private const int ColId           = 1;   // A
-    private const int ColName         = 2;   // B
-    private const int ColSalaryCode   = 3;   // C
-    private const int ColCompany     = 4;   // D
-    private const int ColDepartment   = 5;   // E
-    private const int ColSection     = 6;   // F
-    private const int ColCostCenter   = 7;   // G
-    private const int ColVehicleType  = 8;   // H  (NEW — Vehicle Type)
+    // Column positions (1-based). NOTE: column "I = Phone No." was inserted
+    // between "Vehicle Type" and the old phone-remark column, pushing every
+    // later column one to the right.
+    private const int ColId            = 1;   // A
+    private const int ColName          = 2;   // B
+    private const int ColSalaryCode    = 3;   // C
+    private const int ColCompany       = 4;   // D
+    private const int ColDepartment    = 5;   // E
+    private const int ColSection       = 6;   // F
+    private const int ColCostCenter    = 7;   // G
+    private const int ColVehicleType   = 8;   // H
 
-    // I-L : ค่าโทรศัพท์ส่วนเกิน
-    private const int ColPhoneRemark  = 9;   // I
-    private const int ColPhoneExceed  = 10;  // J
-    private const int ColPhoneService = 11;  // K
-    private const int ColPhoneTotal   = 12;  // L  (formula =J+K)
+    // I-M : ค่าโทรศัพท์ส่วนเกิน (phone group, now 5 columns)
+    private const int ColPhoneNo       = 9;   // I  Phone No.            (NEW)
+    private const int ColPhoneRemark   = 10;  // J  หมายเหตุ              (blank)
+    private const int ColPhoneExceed   = 11;  // K  ค่าโทรเกิน            (= input N)
+    private const int ColPhoneService  = 12;  // L  บริการเสริม           (= input O)
+    private const int ColPhoneTotal    = 13;  // M  รวม                  (= K + L)
 
-    private const int ColMonthlyPark  = 13;  // M
+    private const int ColMonthlyPark   = 14;  // N  ค่าจอดรถรายเดือน (blank)
 
-    // N-P : ค่าจอดรถรายชั่วโมง
-    private const int ColLumpini      = 14;  // N  (hourly total)
-    private const int ColTrueDigital  = 15;  // O
-    private const int ColHourlyTotal  = 16;  // P  (formula =N+O)
+    // O-Q : ค่าจอดรถรายชั่วโมง
+    private const int ColLumpini       = 15;  // O  hourly total
+    private const int ColTrueDigital   = 16;  // P
+    private const int ColHourlyTotal   = 17;  // Q  = O + P
 
-    // Q-R : ค่าจอดรถส่วนที่บริษัทช่วยเหลือ
-    private const int ColMinus400     = 17;  // Q  (formula =N-400)
-    private const int ColRemaining    = 18;  // R  (formula =IF(Q<0,0,Q))
+    // R-S : ค่าจอดรถส่วนที่บริษัทช่วยเหลือ
+    private const int ColMinus400      = 18;  // R  = O - 400
+    private const int ColRemaining     = 19;  // S  = IF(R<0,0,R)
 
-    // S-U : ยอดหักเงินเดือน {month}
-    private const int ColPhoneDeduct  = 19;  // S  (formula =L)
-    private const int ColParkDeduct   = 20;  // T  (formula =R)
-    private const int ColTotalDeduct  = 21;  // U  (formula =S+T)
+    // T-V : ยอดหักเงินเดือน {month}
+    private const int ColPhoneDeduct   = 20;  // T  = M  (phone deduction)
+    private const int ColParkDeduct    = 21;  // U  = S  (parking deduction)
+    private const int ColTotalDeduct   = 22;  // V  = T + U
 
-    private const int ColNote         = 22;  // V
-    private const int ColEmail        = 23;  // W
+    private const int ColNote          = 23;  // W  หมายเหตุ
+    private const int ColEmail         = 24;  // X  Email
 
-    // X-Z : สรุปเฉพาะที่ต้องทำบันทึกหัก
-    private const int ColSummaryPhone = 24;  // X  (formula =S)
-    private const int ColSummaryPark  = 25;  // Y  (formula =T)
-    private const int ColSummaryTotal = 26;  // Z  (formula =U)
+    // Y-AA : สรุปเฉพาะที่ต้องทำบันทึกหัก
+    private const int ColSummaryPhone  = 25;  // Y  = T
+    private const int ColSummaryPark   = 26;  // Z  = U
+    private const int ColSummaryTotal  = 27;  // AA = V
 
-    private const int ColPayroll      = 27;  // AA
+    private const int ColPayroll       = 28;  // AB
 
     private static readonly XLColor GroupHeaderFill = XLColor.FromHtml("#D9E1F2");
-    private static readonly XLColor SubHeaderFill = XLColor.FromHtml("#FFF2CC");
-    private static readonly XLColor BandFill = XLColor.FromHtml("#F2F2F2");
+    private static readonly XLColor SubHeaderFill   = XLColor.FromHtml("#FFF2CC");
+    private static readonly XLColor BandFill        = XLColor.FromHtml("#F2F2F2");
 
     private static readonly string[] ThaiMonths =
     {
@@ -77,9 +80,28 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         WriteSubHeaders(sheet);
         WriteMonthLabel(sheet, monthLabel);
 
+        // Pre-index each employee's Car-row position so a later Motorcycle row
+        // can spill the 400 baht parking subsidy that the Car row left unused.
+        var carRowByEmployee = new Dictionary<string, int>(StringComparer.Ordinal);
         for (var i = 0; i < data.Rows.Count; i++)
         {
-            WriteDataRow(sheet, FirstDataRow + i, data.Rows[i]);
+            var dataRow = data.Rows[i];
+            if (string.Equals(dataRow.VehicleType, "C", StringComparison.Ordinal))
+            {
+                carRowByEmployee[dataRow.EmployeeCode] = FirstDataRow + i;
+            }
+        }
+
+        for (var i = 0; i < data.Rows.Count; i++)
+        {
+            var dataRow = data.Rows[i];
+            int? pairedCarRow = null;
+            if (string.Equals(dataRow.VehicleType, "M", StringComparison.Ordinal)
+                && carRowByEmployee.TryGetValue(dataRow.EmployeeCode, out var carRow))
+            {
+                pairedCarRow = carRow;
+            }
+            WriteDataRow(sheet, FirstDataRow + i, dataRow, pairedCarRow);
         }
 
         ApplyColumnWidths(sheet);
@@ -110,11 +132,11 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         sheet.Cell(GroupHeaderRow, ColVehicleType).Value  = "Vehicle Type";
 
         // Merged group headers spanning multiple columns.
-        SetMerged(sheet, GroupHeaderRow, ColPhoneRemark,  GroupHeaderRow, ColPhoneTotal,    "ค่าโทรศัพท์ส่วนเกิน");
+        SetMerged(sheet, GroupHeaderRow, ColPhoneNo,      GroupHeaderRow, ColPhoneTotal,    "ค่าโทรศัพท์ส่วนเกิน");
         sheet.Cell(GroupHeaderRow, ColMonthlyPark).Value = "ค่าจอดรถรายเดือน";
         SetMerged(sheet, GroupHeaderRow, ColLumpini,      GroupHeaderRow, ColHourlyTotal,   $"ค่าจอดรถรายชั่วโมง\n{periodText}");
         SetMerged(sheet, GroupHeaderRow, ColMinus400,     GroupHeaderRow, ColRemaining,     "ค่าจอดรถส่วนที่บริษัทช่วยเหลือ");
-        // S3:U3 month-label placeholder filled later in WriteMonthLabel.
+        // T3:V3 month-label placeholder filled later in WriteMonthLabel.
 
         sheet.Cell(GroupHeaderRow, ColNote).Value  = "หมายเหตุ";
         sheet.Cell(GroupHeaderRow, ColEmail).Value = "Email";
@@ -136,6 +158,7 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
 
     private static void WriteSubHeaders(IXLWorksheet sheet)
     {
+        sheet.Cell(SubHeaderRow, ColPhoneNo).Value      = "Phone No.";
         sheet.Cell(SubHeaderRow, ColPhoneRemark).Value  = "หมายเหตุ";
         sheet.Cell(SubHeaderRow, ColPhoneExceed).Value  = "ค่าโทรเกิน";
         sheet.Cell(SubHeaderRow, ColPhoneService).Value = "บริการเสริม";
@@ -190,8 +213,9 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
     }
 
-    private static void WriteDataRow(IXLWorksheet sheet, int r, SalaryDeductionRow row)
+    private static void WriteDataRow(IXLWorksheet sheet, int r, SalaryDeductionRow row, int? pairedCarRow)
     {
+        // Employee identity columns.
         sheet.Cell(r, ColId).Value          = row.EmployeeCode;
         sheet.Cell(r, ColName).Value        = row.FullNameThName;
         sheet.Cell(r, ColSalaryCode).Value  = row.SalaryCode;
@@ -201,53 +225,80 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         sheet.Cell(r, ColCostCenter).Value  = row.CostCenter ?? string.Empty;
         sheet.Cell(r, ColVehicleType).Value = MapVehicleType(row.VehicleType);
 
-        // I left blank; J/K filled from phone bill (zero if not present); L = J + K formula.
+        // Phone group: I = phone number, J = blank note,
+        // K = excess, L = service, M = K + L.
+        sheet.Cell(r, ColPhoneNo).Value      = row.PhoneNo ?? string.Empty;
         sheet.Cell(r, ColPhoneExceed).Value  = row.PhoneExcess;
         sheet.Cell(r, ColPhoneService).Value = row.PhoneService;
-        var colJ = XLHelper.GetColumnLetterFromNumber(ColPhoneExceed);
-        var colK = XLHelper.GetColumnLetterFromNumber(ColPhoneService);
-        sheet.Cell(r, ColPhoneTotal).FormulaA1 = $"={colJ}{r}+{colK}{r}";
 
-        // M (ค่าจอดรายเดือน) left blank.
+        var colK = XLHelper.GetColumnLetterFromNumber(ColPhoneExceed);
+        var colL = XLHelper.GetColumnLetterFromNumber(ColPhoneService);
+        sheet.Cell(r, ColPhoneTotal).FormulaA1 = $"={colK}{r}+{colL}{r}";
 
+        // N (ค่าจอดรายเดือน): monthly parking fee, only when the employee owns
+        // an active card_type='M' vehicle of this type. Blank otherwise.
+        if (row.MonthlyAmount > 0m)
+        {
+            sheet.Cell(r, ColMonthlyPark).Value = row.MonthlyAmount;
+        }
+
+        // Hourly parking group: O = Lumpini total (the stamp total), P blank,
+        // Q = N + O + P.
+        // R = combined park deduction after the company's 400 baht subsidy is applied
+        //     per employee. For a C row (or any standalone row), R = O + N - 400.
+        //     For an M row that pairs with a C row, only the LEFTOVER subsidy applies:
+        //     R = O + N - MAX(0, 400 - C.O - C.N).
+        // S = IF(R<0,0,R) is the positive part employees actually owe.
         sheet.Cell(r, ColLumpini).Value      = row.HourlyTotal;
-        // O (True Digital Park) blank.
 
-        var colL = XLHelper.GetColumnLetterFromNumber(ColPhoneTotal);
-        var colN = XLHelper.GetColumnLetterFromNumber(ColLumpini);
-        var colO = XLHelper.GetColumnLetterFromNumber(ColTrueDigital);
-        var colQ = XLHelper.GetColumnLetterFromNumber(ColMinus400);
-        var colR = XLHelper.GetColumnLetterFromNumber(ColRemaining);
+        var colN = XLHelper.GetColumnLetterFromNumber(ColMonthlyPark);
+        var colO = XLHelper.GetColumnLetterFromNumber(ColLumpini);
+        var colP = XLHelper.GetColumnLetterFromNumber(ColTrueDigital);
+        var colR = XLHelper.GetColumnLetterFromNumber(ColMinus400);
 
-        sheet.Cell(r, ColHourlyTotal).FormulaA1 = $"={colN}{r}+{colO}{r}";
-        sheet.Cell(r, ColMinus400).FormulaA1    = $"={colN}{r}-400";
-        sheet.Cell(r, ColRemaining).FormulaA1   = $"=IF({colQ}{r}<0,0,{colQ}{r})";
+        sheet.Cell(r, ColHourlyTotal).FormulaA1 = $"={colN}{r}+{colO}{r}+{colP}{r}";
 
-        sheet.Cell(r, ColPhoneDeduct).FormulaA1 = $"={colL}{r}";
-        sheet.Cell(r, ColParkDeduct).FormulaA1  = $"={colR}{r}";
+        var rFormula = pairedCarRow.HasValue
+            ? $"={colO}{r}+{colN}{r}-MAX(0,400-{colO}{pairedCarRow.Value}-{colN}{pairedCarRow.Value})"
+            : $"={colO}{r}+{colN}{r}-400";
+        sheet.Cell(r, ColMinus400).FormulaA1  = rFormula;
+        sheet.Cell(r, ColRemaining).FormulaA1 = $"=IF({colR}{r}<0,0,{colR}{r})";
 
-        var colS = XLHelper.GetColumnLetterFromNumber(ColPhoneDeduct);
-        var colT = XLHelper.GetColumnLetterFromNumber(ColParkDeduct);
-        sheet.Cell(r, ColTotalDeduct).FormulaA1 = $"={colS}{r}+{colT}{r}";
+        // Monthly deduction group: T = phone total (M), U = remaining parking (S),
+        // V = T + U. Monthly fee is already baked into R via the new formula, so U = S
+        // (no longer S + N).
+        var colM = XLHelper.GetColumnLetterFromNumber(ColPhoneTotal);
+        var colS = XLHelper.GetColumnLetterFromNumber(ColRemaining);
+        sheet.Cell(r, ColPhoneDeduct).FormulaA1 = $"={colM}{r}";
+        sheet.Cell(r, ColParkDeduct).FormulaA1  = $"={colS}{r}";
 
-        // V (หมายเหตุ) blank.
+        var colT = XLHelper.GetColumnLetterFromNumber(ColPhoneDeduct);
+        var colU = XLHelper.GetColumnLetterFromNumber(ColParkDeduct);
+        sheet.Cell(r, ColTotalDeduct).FormulaA1 = $"={colT}{r}+{colU}{r}";
+
+        // W (หมายเหตุ) blank.
         sheet.Cell(r, ColEmail).Value = row.Email ?? string.Empty;
 
-        var colU = XLHelper.GetColumnLetterFromNumber(ColTotalDeduct);
-        sheet.Cell(r, ColSummaryPhone).FormulaA1 = $"={colS}{r}";
-        sheet.Cell(r, ColSummaryPark).FormulaA1  = $"={colT}{r}";
-        sheet.Cell(r, ColSummaryTotal).FormulaA1 = $"={colU}{r}";
+        // Summary block: Y = T (phone), Z = O (raw hourly only — informational
+        // breakdown of parking excluding monthly), AA = V (true total deduction).
+        var colV = XLHelper.GetColumnLetterFromNumber(ColTotalDeduct);
+        sheet.Cell(r, ColSummaryPhone).FormulaA1 = $"={colT}{r}";
+        sheet.Cell(r, ColSummaryPark).FormulaA1  = $"={colO}{r}";
+        sheet.Cell(r, ColSummaryTotal).FormulaA1 = $"={colV}{r}";
 
         sheet.Cell(r, ColPayroll).Value = row.PayrollCode ?? string.Empty;
 
-        sheet.Range(r, ColPhoneRemark, r, ColTotalDeduct).Style.NumberFormat.Format = "#,##0.00";
+        // Number formatting: phone group + monthly deduction + summary.
+        sheet.Range(r, ColPhoneExceed, r, ColTotalDeduct).Style.NumberFormat.Format = "#,##0.00";
         sheet.Range(r, ColSummaryPhone, r, ColSummaryTotal).Style.NumberFormat.Format = "#,##0.00";
 
+        // Borders + zebra striping.
         var dataRange = sheet.Range(r, 1, r, LastCol);
         dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
         dataRange.Style.Border.InsideBorder = XLBorderStyleValues.Hair;
         dataRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         sheet.Cell(r, ColVehicleType).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        sheet.Cell(r, ColPhoneNo).Style.Alignment.Horizontal     = XLAlignmentHorizontalValues.Center;
 
         if ((r - FirstDataRow) % 2 == 1)
         {
@@ -274,6 +325,7 @@ public sealed class SalaryWorkbookBuilder : ISalaryWorkbookBuilder
         sheet.Column(ColCostCenter).Width   = 11;
         sheet.Column(ColVehicleType).Width  = 12;
 
+        sheet.Column(ColPhoneNo).Width      = 14;
         sheet.Column(ColPhoneRemark).Width  = 11;
         sheet.Column(ColPhoneExceed).Width  = 11;
         sheet.Column(ColPhoneService).Width = 11;
